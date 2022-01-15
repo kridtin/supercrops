@@ -8,8 +8,8 @@ import { Bar, Scatter, Line } from "react-chartjs-2";
 import axios from "axios";
 import client from "./api/mqtt.js";
 import { getTHsensor } from "../assets/getTHsensor";
+import { sensoricon } from "../assets/sensoricon";
 import { isDatakeys } from "../assets/isDatakeys";
-
 import Slider from "@mui/material/Slider";
 import { connect } from "mqtt";
 import { border } from "@mui/system";
@@ -102,6 +102,7 @@ export default function node(props) {
 
   const [graph, setgraph] = useState(true);
   const [failTxt, setfailTxt] = useState("เกิดข้อผิดพลาดบางอย่าง");
+  const [graphMode, setgraphMode] = useState([]);
   //graphdata pattern//
   /* const [graphDataList, setgarphDataList] = useState([
     {
@@ -148,6 +149,15 @@ export default function node(props) {
     ],
   });
   const [dataPoint, setdataPoint] = useState("");
+
+  function changeGraphColor(index, color) {
+    let tempState = graphDataList;
+    let tempGraph = tempState[index];
+    tempGraph.datasets[0].backgroundColor = color;
+    tempState[index] = tempGraph;
+    setgarphDataList(tempState);
+  }
+
   function updategraphZone(index, id) {
     const _zoneindex = document.getElementById(id).value;
 
@@ -157,6 +167,13 @@ export default function node(props) {
     temp_state[index] = temp_element;
 
     setgraphZone((graphZone) => [...temp_state]);
+  }
+  function updategraphMode(index, id) {
+    const _mode = document.getElementById(id).value;
+    let temp_state = graphMode;
+    temp_state[index] = _mode;
+
+    setgraphMode((graphMode) => [...temp_state]);
   }
   function resetmqtt() {
     setmsgSend(null);
@@ -193,12 +210,13 @@ export default function node(props) {
         {
           label: "",
           data: [],
-          borderColor: "rgb(255, 99, 132)",
+          //borderColor: "rgb(255, 99, 132)",
           backgroundColor: "rgba(255, 99, 132, 0.5)",
         },
       ],
     };
     setgarphDataList((graphDataList) => [...graphDataList, newGraph]);
+    setgraphMode((graphMode) => [...graphMode, 1]);
   }
   async function updateRelay() {
     console.log("Updating relay: ");
@@ -233,13 +251,182 @@ export default function node(props) {
     setrelayList(_relayList);
     console.log("Update success relay: ");
   }
+  async function getGraphDataConfig(zoneindex, data, index, mode) {
+    const _orgID = localStorage.getItem("_orgID");
 
+    const zoneID = zoneIDlist[zoneindex];
+    const colorHex = document.getElementById("colorpicked" + index).value;
+
+    if (mode == 1) {
+      const time = document.getElementById("gtime0" + index).value;
+      const time1send = parseInt(new Date().getTime() / 1000) - time * 60 * 60;
+      const time2send = parseInt(new Date().getTime() / 1000);
+      const reqdata = {
+        orgId: _orgID,
+        tsdbToken:
+          "YVTWev3u1OiqnX4rK7BUSExsYdHucUdCF6_90x4DgP_vHuIJjkh3Bi0XjqbUUwqln_KsLtnuS--8YqECk1C2SA==",
+        zoneId: zoneID,
+        graphData: data,
+        time1: time1send,
+        time2: time2send,
+      };
+      const _datapoint = await axios
+        .post(
+          `http://203.151.136.127:10002/api/tsdb/service/F184b91fec195443c829aaaebcdaeae16/N1f8003e446ef4e6eaacb06551796f412`,
+          reqdata
+        )
+        .catch((error) => {
+          if (error) {
+            console.log("tsdb requset error");
+            console.log(error);
+            console.log("time 2:" + parseInt(new Date().getTime() / 1000));
+            console.log(
+              "time 1 :" +
+                parseInt((new Date().getTime() - 96 * 60 * 60 * 1000) / 1000)
+            );
+          } else {
+            console.log(error.response.data);
+            console.log(error.response.status);
+            console.log(error.response.headers);
+          }
+        });
+      let _garphData = {
+        labels: [],
+        datasets: [],
+      };
+      let adata = {
+        label: "",
+        data: [],
+        backgroundColor: colorHex,
+      };
+      for (let i = 0; i < _datapoint.data.length; i++) {
+        const data = _datapoint.data[i];
+        const atime = new Date(data._time);
+        const keys = Object.keys(data);
+        for (let i = 0; i < keys.length; i++) {
+          const akey = keys[i];
+          if (isDatakeys(akey)) {
+            adata.label = getTHsensor(akey).name;
+            adata.data.push(data[akey]);
+          }
+        }
+        _garphData.labels.push(
+          `${atime.getDate()}/${
+            atime.getMonth() + 1
+          } | ${atime.getHours()}:${atime.getMinutes()}`
+        );
+      }
+      let temp_state = graphDataList;
+      _garphData.id = temp_state[index].id;
+      _garphData.datasets.push(adata);
+      console.log(_garphData);
+      temp_state[index] = _garphData;
+      setgarphDataList((graphDataList) => [...temp_state]);
+    } else if (mode == 2) {
+      const time = [
+        document.getElementById("gtime1" + index).value,
+        document.getElementById("gtime2" + index).value,
+      ];
+      if (time[0] == "" || time[1] == "") {
+        return "";
+      } else {
+        const time1send = getTimestamp(time[0]) / 1000;
+        const time2send = getTimestamp(time[1]) / 1000;
+        const reqdata = {
+          orgId: _orgID,
+          tsdbToken:
+            "YVTWev3u1OiqnX4rK7BUSExsYdHucUdCF6_90x4DgP_vHuIJjkh3Bi0XjqbUUwqln_KsLtnuS--8YqECk1C2SA==",
+          zoneId: zoneID,
+          graphData: data,
+          time1: time1send,
+          time2: time2send,
+        };
+        const _datapoint = await axios
+          .post(
+            `http://203.151.136.127:10002/api/tsdb/service/F184b91fec195443c829aaaebcdaeae16/N1f8003e446ef4e6eaacb06551796f412`,
+            reqdata
+          )
+          .catch((error) => {
+            if (error) {
+              console.log("tsdb requset error");
+              console.log(error);
+              console.log("time 2:" + parseInt(new Date().getTime() / 1000));
+              console.log(
+                "time 1 :" +
+                  parseInt((new Date().getTime() - 96 * 60 * 60 * 1000) / 1000)
+              );
+            } else {
+              console.log(error.response.data);
+              console.log(error.response.status);
+              console.log(error.response.headers);
+            }
+          });
+        let _garphData = {
+          labels: [],
+          datasets: [],
+          id: "123",
+        };
+        let adata = {
+          label: "",
+          data: [],
+          backgroundColor: colorHex,
+        };
+        for (let i = 0; i < _datapoint.data.length; i++) {
+          const data = _datapoint.data[i];
+          const atime = new Date(data._time);
+          const keys = Object.keys(data);
+          for (let i = 0; i < keys.length; i++) {
+            const akey = keys[i];
+            if (isDatakeys(akey)) {
+              adata.label = getTHsensor(akey).name;
+              adata.data.push(data[akey]);
+            }
+          }
+          _garphData.labels.push(
+            `${atime.getDate()}/${
+              atime.getMonth() + 1
+            } | ${atime.getHours()}:${atime.getMinutes()}`
+          );
+        }
+        let temp_state = graphDataList;
+        _garphData.id = temp_state[index].id;
+        _garphData.datasets.push(adata);
+        console.log(_garphData);
+        temp_state[index] = _garphData;
+        setgarphDataList((graphDataList) => [...temp_state]);
+      }
+    } else {
+    }
+  }
+  function getTimestamp(time) {
+    if (time == undefined) {
+      console.log("undefined");
+    } else if (time == "") {
+      console.log("time = ''");
+    } else {
+      var dateString = time,
+        dateTimeParts = dateString.split("T"),
+        timeParts = dateTimeParts[1].split(":"),
+        dateParts = dateTimeParts[0].split("-"),
+        date;
+
+      date = new Date(
+        dateParts[0],
+        parseInt(dateParts[1], 10) - 1,
+        dateParts[2],
+        timeParts[0],
+        timeParts[1]
+      );
+
+      return date;
+    }
+  }
   async function getGraphData(zoneindex, data, index) {
     const _orgID = localStorage.getItem("_orgID");
 
     const zoneID = zoneIDlist[zoneindex];
-
-    const time1send = parseInt(new Date().getTime() / 1000) - 30 * 24 * 60 * 60;
+    console.log(graphDataList);
+    const time1send = parseInt(new Date().getTime() / 1000) - 6 * 60 * 60;
     const time2send = parseInt(new Date().getTime() / 1000);
     const reqdata = {
       orgId: _orgID,
@@ -307,7 +494,9 @@ export default function node(props) {
         }
       }
       _garphData.labels.push(
-        `${atime.getDate()}/${atime.getMonth()} | ${atime.getHours()}:${atime.getMinutes()}`
+        `${atime.getDate()}/${
+          atime.getMonth() + 1
+        } | ${atime.getHours()}:${atime.getMinutes()}`
       );
     }
     _garphData.datasets.push(adata);
@@ -337,6 +526,7 @@ export default function node(props) {
         console.log("getRelayID Error");
       });
     const nodeInfores = nodeInfo.data;
+    console.log(nodeInfores);
 
     return nodeInfores.relayIDlist;
   }
@@ -1381,7 +1571,7 @@ export default function node(props) {
         <div className="x_panel">
           <div className="x_title">
             <h2>
-              <i className="fa fa-line-chart"></i> กราฟสถิติ
+              <i className="fa fa-line-chart"></i> กราฟสถิติ{" "}
             </h2>
             <ul className="nav navbar-right panel_toolbox">
               <li>
@@ -1405,9 +1595,10 @@ export default function node(props) {
             }}
           >
             {graphDataList.map((graphdata, graphindex) => {
+              console.log(graphDataList);
               return (
                 <div
-                  key={graphdata.id}
+                  key={"graph" + graphindex}
                   id={"graph" + graphindex}
                   style={{
                     border: "solid 0.5px",
@@ -1444,7 +1635,7 @@ export default function node(props) {
                       <option value={-1}>เลือกโซน</option>
                       {zoneIDlist.map((zone, index) => {
                         return (
-                          <option key={index} value={index}>
+                          <option key={"zone" + index} value={index}>
                             โซนที่ {index + 1}
                           </option>
                         );
@@ -1454,7 +1645,7 @@ export default function node(props) {
                     {dataList.map((_data, index) => {
                       return (
                         <select
-                          key={index}
+                          key={"data" + index}
                           id={"dataSelect_graph" + graphindex}
                           style={
                             graphZone[graphindex]
@@ -1470,14 +1661,16 @@ export default function node(props) {
                               : { display: "none" }
                           }
                           onChange={() =>
-                            getGraphData(
+                            getGraphDataConfig(
                               document.getElementById(
                                 "selectzone_graph" + graphindex
                               ).value,
                               document.getElementById(
                                 "dataSelect_graph" + graphindex
                               ).value,
-                              graphindex
+                              graphindex,
+                              document.getElementById("gmode" + graphindex)
+                                .value
                             )
                           }
                         >
@@ -1485,7 +1678,7 @@ export default function node(props) {
                           {_data.map((data, index) => {
                             if (data[1] != null) {
                               return (
-                                <option key={index} value={data[0]}>
+                                <option key={data[0]} value={data[0]}>
                                   {getTHsensor(data[0]).name}
                                 </option>
                               );
@@ -1494,10 +1687,148 @@ export default function node(props) {
                         </select>
                       );
                     })}
+                    <select
+                      id={"gmode" + graphindex}
+                      style={{
+                        color: "#73879C",
+                        height: "30px",
+                        marginLeft: "10px",
+                        borderColor: "#BEBEBE",
+                        borderRadius: "5px",
+                        marginLeft: "auto",
+                      }}
+                      onChange={() =>
+                        updategraphMode(graphindex, "gmode" + graphindex)
+                      }
+                      disabled={false}
+                    >
+                      <option value={1} defaultValue={true}>
+                        เวลาย้อนหลัง
+                      </option>
+                      <option value={2}>ช่วงเวลา</option>
+                    </select>
+                    <select
+                      id={"gtime0" + graphindex}
+                      onChange={() =>
+                        getGraphDataConfig(
+                          document.getElementById(
+                            "selectzone_graph" + graphindex
+                          ).value,
+                          document.getElementById(
+                            "dataSelect_graph" + graphindex
+                          ).value,
+                          graphindex,
+                          document.getElementById("gmode" + graphindex).value
+                        )
+                      }
+                      style={
+                        graphMode[graphindex] == 1
+                          ? {
+                              color: "#73879C",
+                              height: "30px",
+                              marginLeft: "10px",
+                              borderColor: "#BEBEBE",
+                              borderRadius: "5px",
+                            }
+                          : { display: "none" }
+                      }
+                      disabled={false}
+                    >
+                      <option value={1}>1 ชั่วโมง</option>
+                      <option value={2}>2 ชั่วโมง</option>
+                      <option value={3}>3 ชั่วโมง</option>
+                      <option value={4}>4 ชั่วโมง</option>
+                      <option value={5}>5 ชั่วโมง</option>
+                    </select>
+                    <input
+                      id={"gtime1" + graphindex}
+                      type="datetime-local"
+                      onChange={() =>
+                        getGraphDataConfig(
+                          document.getElementById(
+                            "selectzone_graph" + graphindex
+                          ).value,
+                          document.getElementById(
+                            "dataSelect_graph" + graphindex
+                          ).value,
+                          graphindex,
+
+                          document.getElementById("gmode" + graphindex).value
+                        )
+                      }
+                      style={
+                        graphMode[graphindex] == 2
+                          ? {
+                              border: "solid 1px",
+                              color: "#73879C",
+                              height: "30px",
+                              marginLeft: "10px",
+                              borderColor: "#BEBEBE",
+                              borderRadius: "5px",
+                              outline: "none",
+                              minWidth: "50px",
+                            }
+                          : { display: "none" }
+                      }
+                      disabled={false}
+                    ></input>
+                    <input
+                      id={"gtime2" + graphindex}
+                      type="datetime-local"
+                      onChange={() =>
+                        getGraphDataConfig(
+                          document.getElementById(
+                            "selectzone_graph" + graphindex
+                          ).value,
+                          document.getElementById(
+                            "dataSelect_graph" + graphindex
+                          ).value,
+                          graphindex,
+
+                          document.getElementById("gmode" + graphindex).value
+                        )
+                      }
+                      style={
+                        graphMode[graphindex] == 2
+                          ? {
+                              border: "solid 1px",
+                              color: "#73879C",
+                              height: "30px",
+                              marginLeft: "10px",
+                              borderColor: "#BEBEBE",
+                              borderRadius: "5px",
+                              outline: "none",
+                              minWidth: "50px",
+                            }
+                          : { display: "none" }
+                      }
+                      disabled={false}
+                    ></input>
+                    <input
+                      id={"colorpicked" + graphindex}
+                      type="color"
+                      onChange={() =>
+                        changeGraphColor(
+                          graphindex,
+                          document.getElementById("colorpicked" + graphindex)
+                            .value
+                        )
+                      }
+                      style={{
+                        border: "solid 1px",
+                        color: "#73879C",
+                        height: "30px",
+                        marginLeft: "10px",
+                        borderColor: "#BEBEBE",
+                        borderRadius: "5px",
+                        outline: "none",
+                        minWidth: "50px",
+                      }}
+                    />
                     <button
                       className="btn btn-danger"
                       style={{
-                        marginLeft: "auto",
+                        marginLeft: "10px",
                         border: "none",
                         backgroundColor: "white",
                         outline: "none",
@@ -1510,6 +1841,7 @@ export default function node(props) {
                   </div>
 
                   <Line
+                    key={graphDataList}
                     data={graphdata}
                     style={{ maxWidth: "100%", maxHeight: "350px" }}
                   />
@@ -1558,7 +1890,7 @@ export default function node(props) {
                 <div
                   id={"zidContent" + zIndex}
                   className="x_content"
-                  style={{ display: "none" }}
+                  style={{ display: "block" }}
                 >
                   <div
                     className="profile_details"
@@ -1576,31 +1908,56 @@ export default function node(props) {
                           <div
                             key={_index}
                             className="well profile_view"
-                            style={{ width: "350px", minWidth: "300px" }}
+                            style={{ minWidth: "220px" }}
                           >
                             <div className="col">
                               <div
                                 style={{
                                   display: "flex",
                                   width: "100%",
-                                  flexDirection: "column",
+                                  flexDirection: "row",
+                                  minHeight: "70px",
                                 }}
                               >
-                                <h2 className="brief">
-                                  <i className="fa fa-sun-o"></i>{" "}
-                                  {getTHsensor(data[0]).name}{" "}
-                                </h2>
-                                <h4>
-                                  {data[1]}{" "}
-                                  <label
+                                <div>
+                                  <img
+                                    src={sensoricon(data[0])}
+                                    height={60}
+                                    width={60}
+                                  />
+                                </div>
+                                <div
+                                  style={{
+                                    marginLeft: "auto",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "0px",
+                                  }}
+                                >
+                                  <div
                                     style={{
-                                      fontWeight: "bold",
-                                      color: "#AAB6AA",
+                                      marginLeft: "auto",
+                                      marginBottom: "-10px",
                                     }}
                                   >
-                                    {getTHsensor(data[0]).vocabulary}
-                                  </label>
-                                </h4>
+                                    <label
+                                      className="brief"
+                                      style={{
+                                        fontWeight: "bold",
+                                        color: "#AAB6AA",
+                                        marginRight: "5px",
+                                        fontSize: "24px",
+                                      }}
+                                    >
+                                      {data[1]}
+                                    </label>
+
+                                    <label>
+                                      {getTHsensor(data[0]).vocabulary}
+                                    </label>
+                                  </div>
+                                  <div>{getTHsensor(data[0]).name} </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -2781,8 +3138,15 @@ export default function node(props) {
                             }}
                           >
                             <label>
-                              <i className="fa fa-clock-o"></i> ตั้งค่าเวลา :{" "}
-                              {relay.timeFunction ? "เปิด" : "ปิด"}
+                              <i className="fa fa-clock-o"></i> ตั้งค่าเวลา :
+                              <h
+                                className={
+                                  relay.timeFunction ? styles.online : ""
+                                }
+                                style={{ marginLeft: "5px" }}
+                              >
+                                {relay.timeFunction ? "เปิด" : "ปิด"}
+                              </h>
                             </label>
                             <ul
                               className="nav navbar-right panel_toolbox"
@@ -2839,7 +3203,15 @@ export default function node(props) {
                             </ul>
                           </h2>
                           <h2>
-                            รอบที่ 1 : {relay.time1.status ? "เปิด" : "ปิด"}
+                            <label>รอบที่ 1 :</label>
+                            <label
+                              className={
+                                relay.time1.status ? styles.online : ""
+                              }
+                              style={{ marginLeft: "5px" }}
+                            >
+                              {relay.time1.status ? "เปิด" : "ปิด"}
+                            </label>
                           </h2>
                           <h2 className={relay.timeFunction ? "brief" : ""}>
                             เปิด : <i className="fa fa-clock-o"></i>{" "}
@@ -2928,8 +3300,16 @@ export default function node(props) {
                             </label>
                           </h2>
                           <h2>
-                            รอบที่ 2 :{" "}
-                            {relay.time2.status == 1 ? "เปิด" : "ปิด"}
+                            <label> รอบที่ 2 : </label>
+
+                            <label
+                              className={
+                                relay.time2.status ? styles.online : ""
+                              }
+                              style={{ marginLeft: "5px" }}
+                            >
+                              {relay.time2.status == 1 ? "เปิด" : "ปิด"}
+                            </label>
                           </h2>
                           <h2 className={relay.timeFunction ? "brief" : ""}>
                             เปิด : <i className="fa fa-clock-o"></i>{" "}
@@ -3018,10 +3398,17 @@ export default function node(props) {
                             </label>
                           </h2>
                           <h2>
-                            รอบที่ 3 :{" "}
-                            {relay.time3.status == 1 ? "เปิด" : "ปิด"}
+                            <label>รอบที่ 3 :</label>
+                            <label
+                              className={
+                                relay.time3.status ? styles.online : ""
+                              }
+                              style={{ marginLeft: "5px" }}
+                            >
+                              {relay.time3.status == 1 ? "เปิด" : "ปิด"}
+                            </label>
                           </h2>
-                          <h2 className={relay.timeFunction ? "brief" : ""}>
+                          <h2>
                             เปิด : <i className="fa fa-clock-o"></i>{" "}
                             {relay.time3.time_on} | ปิด:{" "}
                             <i className="fa fa-clock-o"></i>{" "}
@@ -3117,6 +3504,13 @@ export default function node(props) {
                             >
                               <label>
                                 <i className="fa fa-database"></i> ตั้งค่าข้อมูล{" "}
+                              </label>
+                              <label
+                                className={
+                                  relay.dataFunction ? styles.online : ""
+                                }
+                                style={{ marginLeft: "5px" }}
+                              >
                                 {relay.dataFunction ? "เปิด" : "ปิด"}
                               </label>
                               <ul
@@ -3179,7 +3573,11 @@ export default function node(props) {
                                 </a>
                               </ul>
                             </h2>
-                            <h2>
+                            <h2
+                              className={
+                                relay.data1.status ? styles.online : ""
+                              }
+                            >
                               <i className="fa fa-sun-o"></i> {relay.data1.data}{" "}
                               {relay.data1.status ? "เปิด" : "ปิด"}
                             </h2>

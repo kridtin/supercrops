@@ -14,7 +14,7 @@ export function getTHsensor(text) {
   } else if (text == "weather_pm10") {
     return { name: "PM10 ในอากาศ", vocabulary: "ug/m" };
   } else if (text == "weather_wind_direc") {
-    return { name: "ทิศทางลม", vocabulary: "" };
+    return { name: "ทิศทางลม", vocabulary: "°" };
   } else if (text == "weather_wind_speed") {
     return { name: "ความเร็วลม", vocabulary: "m/s" };
   } else if (text == "weather_rain_gauge") {
