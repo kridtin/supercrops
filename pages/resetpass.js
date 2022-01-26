@@ -2,10 +2,16 @@ import React from "react";
 import Image from "next/image";
 
 export default function resetpass() {
-  function resetPass() {
+  async function resetPass() {
     var newpass = document.getElementById("newPass").value;
     var repass = document.getElementById("rePass").value;
-    alert(newpass + " " + repass);
+    const resetpassres = await axios.post(
+      "",
+      { data: "" }.catch((error) => {
+        console.log(error.response);
+      })
+    );
+    console.log(resetpassres);
   }
   return (
     <body className="login">

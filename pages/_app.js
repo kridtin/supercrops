@@ -13,6 +13,7 @@ import "../styles/gentelella/vendors/jqvmap/dist/jqvmap.min.css";
 import "../styles/gentelella/vendors/bootstrap-daterangepicker/daterangepicker.css";
 import "../styles/bootstrap-toggle.min.css";
 
+import "chartjs-adapter-moment";
 import Head from "next/head";
 import Layout from "../layout/layout";
 import { useRouter } from "next/router";

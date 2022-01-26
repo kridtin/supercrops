@@ -5,12 +5,29 @@ import router from "next/router";
 import axios from "axios";
 
 export default function login(props) {
-  function login() {
+  async function login() {
     var email = document.getElementById("login_email").value;
     var pass = document.getElementById("login_pass").value;
+
     props.setorgID("Oc780373b0fa34391a5f987cc095f680a");
     props.setLogin(true);
     router.push("/");
+  }
+  async function logintest() {
+    var email = document.getElementById("login_email").value;
+    var pass = document.getElementById("login_pass").value;
+    console.log(email + pass);
+    const loginres = await axios
+      .post(
+        "http://2c3e-2001-fb1-61-6ff2-3deb-b5ca-acd3-3713.ngrok.io/api/auth/signin",
+        { username: "test1", password: "012345678" }
+      )
+      .catch((error) => {
+        console.log(error);
+      });
+    localStorage.setItem("logininfo", JSON.stringify(loginres.data));
+
+    router.push("/testapi");
   }
   function register() {
     var username = document.getElementById("reg_Username").value;
@@ -24,9 +41,15 @@ export default function login(props) {
       alert(username + " " + email + " " + phone + " " + pass + " " + repass);
     }
   }
-  function resetpass() {
+  async function resetpass() {
     var email = document.getElementById("reset_email").value;
-    alert(email);
+    const resetreqres = await axios.post(
+      "",
+      { data: "" }.catch((error) => {
+        console.log(error.response);
+      })
+    );
+    console.log(resetreqres);
   }
   return (
     <body style={{ backgroundColor: "white", width: "100vw", height: "100vh" }}>

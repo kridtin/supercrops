@@ -14,6 +14,8 @@ import Slider from "@mui/material/Slider";
 import { connect } from "mqtt";
 import { border } from "@mui/system";
 
+import GraphData from "../components/GraphData";
+
 export default function node(props) {
   const router = useRouter();
   //const Data = router.query;
@@ -91,6 +93,8 @@ export default function node(props) {
   const [dataSelect, setdataSelect] = useState(null);
   const isInitialMount = useRef(true);
 
+  const [graphDataList, setgarphDataList] = useState([]);
+
   const [mqttStat, setmqttStat] = useState(false);
   const [mqttsending, setmqttsending] = useState(false);
   const [msgSend, setmsgSend] = useState(null);
@@ -102,122 +106,10 @@ export default function node(props) {
 
   const [graph, setgraph] = useState(true);
   const [failTxt, setfailTxt] = useState("เกิดข้อผิดพลาดบางอย่าง");
-  const [graphMode, setgraphMode] = useState([]);
-  //graphdata pattern//
-  /* const [graphDataList, setgarphDataList] = useState([
-    {
-      id: "gp01",
-      labels: ["a", "a", "a", "a", "a", "a"],
-      datasets: [
-        {
-          label: "data1",
-          data: [1, 2, 3, 4, 5, 6],
-          borderColor: "rgb(255, 99, 132)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-        },
-      ],
-    },
-    {
-      id: "gp02",
-      labels: ["b", "b", "b", "b", "b", "b"],
-      datasets: [
-        {
-          label: "data2",
-          data: [6, 5, 4, 3, 2, 1],
-          borderColor: "rgb(255, 99, 132)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-        },
-      ],
-    },
-  ]);*/
-
-  const [graphDataList, setgarphDataList] = useState([]);
-  const [graphDataSelect, setgarphDataSelect] = useState([]);
-  const [graphZone, setgraphZone] = useState([]);
 
   const [dataValue, setdataValue] = useState([]);
   const [dataRelay, setdataRelay] = useState("");
 
-  const [garphData, setgarphData] = useState({
-    labels: [],
-    datasets: [
-      {
-        label: "",
-        data: [],
-        backgroundColor: "rgb(0, 219, 65)",
-      },
-    ],
-  });
-  const [dataPoint, setdataPoint] = useState("");
-
-  function changeGraphColor(index, color) {
-    let tempState = graphDataList;
-    let tempGraph = tempState[index];
-    tempGraph.datasets[0].backgroundColor = color;
-    tempState[index] = tempGraph;
-    setgarphDataList(tempState);
-  }
-
-  function updategraphZone(index, id) {
-    const _zoneindex = document.getElementById(id).value;
-
-    let temp_state = graphZone;
-    let temp_element = temp_state[index];
-    temp_element = { index: _zoneindex };
-    temp_state[index] = temp_element;
-
-    setgraphZone((graphZone) => [...temp_state]);
-  }
-  function updategraphMode(index, id) {
-    const _mode = document.getElementById(id).value;
-    let temp_state = graphMode;
-    temp_state[index] = _mode;
-
-    setgraphMode((graphMode) => [...temp_state]);
-  }
-  function resetmqtt() {
-    setmsgSend(null);
-    setmqttopic(null);
-  }
-  function genid(length) {
-    var result = [];
-    var characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    var charactersLength = characters.length;
-    for (var i = 0; i < length; i++) {
-      result.push(
-        characters.charAt(Math.floor(Math.random() * charactersLength))
-      );
-    }
-    return result.join("");
-  }
-
-  function addgraph(func) {
-    var genid = 1;
-    while (genid) {
-      var newid = func(16);
-      for (let i = 0; i < graphDataList.length; i++) {
-        if (graphDataList[i].id === newid) {
-          genid = 1;
-        }
-      }
-      genid = 0;
-    }
-    var newGraph = {
-      id: "graph" + newid,
-      labels: [],
-      datasets: [
-        {
-          label: "",
-          data: [],
-          //borderColor: "rgb(255, 99, 132)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-        },
-      ],
-    };
-    setgarphDataList((graphDataList) => [...graphDataList, newGraph]);
-    setgraphMode((graphMode) => [...graphMode, 1]);
-  }
   async function updateRelay() {
     console.log("Updating relay: ");
     const _orgID = localStorage.getItem("_orgID");
@@ -251,263 +143,10 @@ export default function node(props) {
     setrelayList(_relayList);
     console.log("Update success relay: ");
   }
-  async function getGraphDataConfig(zoneindex, data, index, mode) {
-    const _orgID = localStorage.getItem("_orgID");
-
-    const zoneID = zoneIDlist[zoneindex];
-    const colorHex = document.getElementById("colorpicked" + index).value;
-
-    if (mode == 1) {
-      const time = document.getElementById("gtime0" + index).value;
-      const time1send = parseInt(new Date().getTime() / 1000) - time * 60 * 60;
-      const time2send = parseInt(new Date().getTime() / 1000);
-      const reqdata = {
-        orgId: _orgID,
-        tsdbToken:
-          "YVTWev3u1OiqnX4rK7BUSExsYdHucUdCF6_90x4DgP_vHuIJjkh3Bi0XjqbUUwqln_KsLtnuS--8YqECk1C2SA==",
-        zoneId: zoneID,
-        graphData: data,
-        time1: time1send,
-        time2: time2send,
-      };
-      const _datapoint = await axios
-        .post(
-          `http://203.151.136.127:10002/api/tsdb/service/F184b91fec195443c829aaaebcdaeae16/N1f8003e446ef4e6eaacb06551796f412`,
-          reqdata
-        )
-        .catch((error) => {
-          if (error) {
-            console.log("tsdb requset error");
-            console.log(error);
-            console.log("time 2:" + parseInt(new Date().getTime() / 1000));
-            console.log(
-              "time 1 :" +
-                parseInt((new Date().getTime() - 96 * 60 * 60 * 1000) / 1000)
-            );
-          } else {
-            console.log(error.response.data);
-            console.log(error.response.status);
-            console.log(error.response.headers);
-          }
-        });
-      let _garphData = {
-        labels: [],
-        datasets: [],
-      };
-      let adata = {
-        label: "",
-        data: [],
-        backgroundColor: colorHex,
-      };
-      for (let i = 0; i < _datapoint.data.length; i++) {
-        const data = _datapoint.data[i];
-        const atime = new Date(data._time);
-        const keys = Object.keys(data);
-        for (let i = 0; i < keys.length; i++) {
-          const akey = keys[i];
-          if (isDatakeys(akey)) {
-            adata.label = getTHsensor(akey).name;
-            adata.data.push(data[akey]);
-          }
-        }
-        _garphData.labels.push(
-          `${atime.getDate()}/${
-            atime.getMonth() + 1
-          } | ${atime.getHours()}:${atime.getMinutes()}`
-        );
-      }
-      let temp_state = graphDataList;
-      _garphData.id = temp_state[index].id;
-      _garphData.datasets.push(adata);
-      console.log(_garphData);
-      temp_state[index] = _garphData;
-      setgarphDataList((graphDataList) => [...temp_state]);
-    } else if (mode == 2) {
-      const time = [
-        document.getElementById("gtime1" + index).value,
-        document.getElementById("gtime2" + index).value,
-      ];
-      if (time[0] == "" || time[1] == "") {
-        return "";
-      } else {
-        const time1send = getTimestamp(time[0]) / 1000;
-        const time2send = getTimestamp(time[1]) / 1000;
-        const reqdata = {
-          orgId: _orgID,
-          tsdbToken:
-            "YVTWev3u1OiqnX4rK7BUSExsYdHucUdCF6_90x4DgP_vHuIJjkh3Bi0XjqbUUwqln_KsLtnuS--8YqECk1C2SA==",
-          zoneId: zoneID,
-          graphData: data,
-          time1: time1send,
-          time2: time2send,
-        };
-        const _datapoint = await axios
-          .post(
-            `http://203.151.136.127:10002/api/tsdb/service/F184b91fec195443c829aaaebcdaeae16/N1f8003e446ef4e6eaacb06551796f412`,
-            reqdata
-          )
-          .catch((error) => {
-            if (error) {
-              console.log("tsdb requset error");
-              console.log(error);
-              console.log("time 2:" + parseInt(new Date().getTime() / 1000));
-              console.log(
-                "time 1 :" +
-                  parseInt((new Date().getTime() - 96 * 60 * 60 * 1000) / 1000)
-              );
-            } else {
-              console.log(error.response.data);
-              console.log(error.response.status);
-              console.log(error.response.headers);
-            }
-          });
-        let _garphData = {
-          labels: [],
-          datasets: [],
-          id: "123",
-        };
-        let adata = {
-          label: "",
-          data: [],
-          backgroundColor: colorHex,
-        };
-        for (let i = 0; i < _datapoint.data.length; i++) {
-          const data = _datapoint.data[i];
-          const atime = new Date(data._time);
-          const keys = Object.keys(data);
-          for (let i = 0; i < keys.length; i++) {
-            const akey = keys[i];
-            if (isDatakeys(akey)) {
-              adata.label = getTHsensor(akey).name;
-              adata.data.push(data[akey]);
-            }
-          }
-          _garphData.labels.push(
-            `${atime.getDate()}/${
-              atime.getMonth() + 1
-            } | ${atime.getHours()}:${atime.getMinutes()}`
-          );
-        }
-        let temp_state = graphDataList;
-        _garphData.id = temp_state[index].id;
-        _garphData.datasets.push(adata);
-        console.log(_garphData);
-        temp_state[index] = _garphData;
-        setgarphDataList((graphDataList) => [...temp_state]);
-      }
-    } else {
-    }
+  function resetmqtt() {
+    setmsgSend(null);
+    setmqttopic(null);
   }
-  function getTimestamp(time) {
-    if (time == undefined) {
-      console.log("undefined");
-    } else if (time == "") {
-      console.log("time = ''");
-    } else {
-      var dateString = time,
-        dateTimeParts = dateString.split("T"),
-        timeParts = dateTimeParts[1].split(":"),
-        dateParts = dateTimeParts[0].split("-"),
-        date;
-
-      date = new Date(
-        dateParts[0],
-        parseInt(dateParts[1], 10) - 1,
-        dateParts[2],
-        timeParts[0],
-        timeParts[1]
-      );
-
-      return date;
-    }
-  }
-  async function getGraphData(zoneindex, data, index) {
-    const _orgID = localStorage.getItem("_orgID");
-
-    const zoneID = zoneIDlist[zoneindex];
-    console.log(graphDataList);
-    const time1send = parseInt(new Date().getTime() / 1000) - 6 * 60 * 60;
-    const time2send = parseInt(new Date().getTime() / 1000);
-    const reqdata = {
-      orgId: _orgID,
-      tsdbToken:
-        "YVTWev3u1OiqnX4rK7BUSExsYdHucUdCF6_90x4DgP_vHuIJjkh3Bi0XjqbUUwqln_KsLtnuS--8YqECk1C2SA==",
-      zoneId: zoneID,
-      graphData: data,
-      time1: time1send,
-      time2: time2send,
-    };
-
-    console.log(reqdata);
-    const _datapoint = await axios
-      .post(
-        `http://203.151.136.127:10002/api/tsdb/service/F184b91fec195443c829aaaebcdaeae16/N1f8003e446ef4e6eaacb06551796f412`,
-        reqdata
-      )
-      .catch((error) => {
-        if (error) {
-          console.log("tsdb requset error");
-          console.log(error);
-          console.log("time 2:" + parseInt(new Date().getTime() / 1000));
-          console.log(
-            "time 1 :" +
-              parseInt((new Date().getTime() - 96 * 60 * 60 * 1000) / 1000)
-          );
-        } else {
-          console.log(error.response.data);
-          console.log(error.response.status);
-          console.log(error.response.headers);
-        }
-      });
-    const aztime1 = new Date().getTime() - 90 * 24 * 60 * 60 * 1000;
-    const aztime2 = new Date().getTime();
-    const ztime1 = new Date(time1send * 1000);
-    const ztime2 = new Date(time2send * 1000);
-    console.log("time 1 :" + ztime1 + "=>" + time1send);
-    console.log("time 2 :" + ztime2 + "=>" + time2send);
-    //console.log("Data point: ");
-
-    //console.log(_datapoint);
-    //setdataPoint(_datapoint);
-    console.log(_datapoint);
-
-    let _garphData = {
-      labels: [],
-      datasets: [],
-    };
-    let adata = {
-      label: "",
-      data: [],
-      backgroundColor: "rgb(0, 219, 65)",
-    };
-
-    for (let i = 0; i < _datapoint.data.length; i++) {
-      const data = _datapoint.data[i];
-      const atime = new Date(data._time);
-      const keys = Object.keys(data);
-
-      for (let i = 0; i < keys.length; i++) {
-        const akey = keys[i];
-        if (isDatakeys(akey)) {
-          adata.label = getTHsensor(akey).name;
-          adata.data.push(data[akey]);
-        }
-      }
-      _garphData.labels.push(
-        `${atime.getDate()}/${
-          atime.getMonth() + 1
-        } | ${atime.getHours()}:${atime.getMinutes()}`
-      );
-    }
-    _garphData.datasets.push(adata);
-    console.log(_garphData);
-
-    let temp_state = graphDataList;
-    temp_state[index] = _garphData;
-
-    setgarphDataList((graphDataList) => [...temp_state]);
-  }
-
   async function getRelayID() {
     const _orgID = localStorage.getItem("_orgID");
     const _farmID = localStorage.getItem("_farmID");
@@ -526,17 +165,18 @@ export default function node(props) {
         console.log("getRelayID Error");
       });
     const nodeInfores = nodeInfo.data;
-    console.log(nodeInfores);
+    //console.log(nodeInfores);
 
     return nodeInfores.relayIDlist;
   }
-
-  async function getRaley() {}
 
   //=======================================//
   //=============Supsciption===============//
   //=======================================//
   useEffect(async () => {
+    if (localStorage.graphData != undefined) {
+      setgarphDataList(JSON.parse(localStorage.graphData));
+    }
     const _orgID = localStorage.getItem("_orgID");
     const _farmID = localStorage.getItem("_farmID");
     const _nodeID = localStorage.getItem("_nodeID");
@@ -611,6 +251,7 @@ export default function node(props) {
         console.log(error.response.headers);
       });
     const nodeInfores = nodeInfo.data;
+    setRefresshTime(nodeInfores.refreshTime);
 
     setnodeInfo(nodeInfores);
     setzoneIDlist(nodeInfores.zoneIDlist);
@@ -910,6 +551,21 @@ export default function node(props) {
       }
     }
   }
+  function setRefresshTime(time) {
+    if (time == "5m") {
+      setreTime(300000);
+    } else if (time == "10m") {
+      setreTime(600000);
+    } else if (time == "15m") {
+      setreTime(900000);
+    } else if (time == "20m") {
+      setreTime(1200000);
+    } else if (time == "25m") {
+      setreTime(1500000);
+    } else if (time == "30m") {
+      setreTime(1800000);
+    }
+  }
   function putTimeSetting(relayIndex, relayID) {
     const _orgId = localStorage.getItem("_orgID");
     const _timeFunction = document.getElementById(
@@ -998,7 +654,7 @@ export default function node(props) {
             const _date = relay_time1.date[i];
             const _timeon = relay_time1.time_on;
             const _timeoff = relay_time1.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date[i] == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1015,7 +671,7 @@ export default function node(props) {
             const _date = relay_time2.date[i];
             const _timeon = relay_time2.time_on;
             const _timeoff = relay_time2.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1033,7 +689,7 @@ export default function node(props) {
             const _date = relay_time1.date[i];
             const _timeon = relay_time1.time_on;
             const _timeoff = relay_time1.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1050,7 +706,7 @@ export default function node(props) {
             const _date = relay_time2.date[i];
             const _timeon = relay_time2.time_on;
             const _timeoff = relay_time2.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1068,7 +724,7 @@ export default function node(props) {
             const _date = relay_time1.date[i];
             const _timeon = relay_time1.time_on;
             const _timeoff = relay_time1.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1085,7 +741,7 @@ export default function node(props) {
             const _date = relay_time2.date[i];
             const _timeon = relay_time2.time_on;
             const _timeoff = relay_time2.time_off;
-            if (_date == date[i]) {
+            if (_date[i] == 1 && _date == date[i]) {
               if (timeon > _timeon && timeon < _timeoff) {
                 return "false";
               } else if (timeon < _timeon && timeoff > _timeon) {
@@ -1100,9 +756,6 @@ export default function node(props) {
         }
       }
     }
-  }
-  function deleteGraph(id) {
-    setgarphDataList(graphDataList.filter((value) => value.id !== id));
   }
 
   async function putminitime(relayIndex, relayID, timeIndex) {
@@ -1313,7 +966,7 @@ export default function node(props) {
       }
     );
   }
-  function settimeFunction(id, relayID) {
+  function settimeFunction(id, relayID, relayIndex) {
     const _farmID = localStorage.getItem("_farmID");
     const _orgId = localStorage.getItem("_orgID");
     const check = document.getElementById(id).checked;
@@ -1323,6 +976,105 @@ export default function node(props) {
     } else {
       var _putdata = { timeFunction: "false" };
       var _datafn = { dataFunction: "false" };
+
+      const _relayList = relayList;
+      let _relay = {
+        time1: {
+          time_on: "00:00",
+          time_off: "00:01",
+          date: [0, 0, 0, 0, 0, 0, 0],
+          status: "false",
+        },
+        time2: {
+          time_on: "00:00",
+          time_off: "00:01",
+          date: [0, 0, 0, 0, 0, 0, 0],
+          status: "false",
+        },
+        time3: {
+          time_on: "00:00",
+          time_off: "00:01",
+          date: [0, 0, 0, 0, 0, 0, 0],
+          status: "false",
+        },
+      };
+      for (let i = 0; i < _relayList.length; i++) {
+        const temp_relay = _relayList[i];
+        if (temp_relay.relayID == relayID) {
+          _relay = _relayList[i];
+        }
+      }
+      console.log("temp_relay");
+      console.log(_relay);
+
+      const time1 = {
+        time1: {
+          status: "false",
+          time_on: _relay.time1.time_on,
+          time_off: _relay.time1.time_off,
+          date: _relay.time1.date,
+        },
+      };
+
+      client.publish(
+        `/set_time1/${_farmID}/${relayID}`,
+        JSON.stringify(time1),
+        function (err) {
+          if (!err) {
+            console.log(
+              "$******Publich to :" + `/front/set_time1/${_farmID}/${relayID}`
+            );
+            console.log(_putdata);
+          } else {
+            console.log(err);
+          }
+        }
+      );
+
+      const time2 = {
+        time2: {
+          status: "false",
+          time_on: _relay.time2.time_on,
+          time_off: _relay.time2.time_off,
+          date: _relay.time2.date,
+        },
+      };
+      client.publish(
+        `/set_time2/${_farmID}/${relayID}`,
+        JSON.stringify(time2),
+        function (err) {
+          if (!err) {
+            console.log(
+              "$******Publich to :" + `/front/set_time2/${_farmID}/${relayID}`
+            );
+            console.log(_putdata);
+          } else {
+            console.log(err);
+          }
+        }
+      );
+      const time3 = {
+        time3: {
+          status: "false",
+          time_on: _relay.time3.time_on,
+          time_off: _relay.time3.time_off,
+          date: _relay.time3.date,
+        },
+      };
+      client.publish(
+        `/set_time3/${_farmID}/${relayID}`,
+        JSON.stringify(time3),
+        function (err) {
+          if (!err) {
+            console.log(
+              "$******Publich to :" + `/front/set_time3/${_farmID}/${relayID}`
+            );
+            console.log(_putdata);
+          } else {
+            console.log(err);
+          }
+        }
+      );
     }
     client.publish(
       `/time_fn/${_farmID}/${relayID}`,
@@ -1349,13 +1101,13 @@ export default function node(props) {
           console.log("!!****and****!!");
           console.log(_datafn);
           console.log("=============================");
-          setwait(true);
         } else {
           console.log(err);
         }
       }
     );
   }
+  useEffect(() => {}, []);
   function changeStatus(id, relayID) {
     const _orgId = localStorage.getItem("_orgID");
     const _farmID = localStorage.getItem("_farmID");
@@ -1395,6 +1147,7 @@ export default function node(props) {
     }, reTime);
     return () => clearInterval(interval);
   }, [reTime]);
+
   return (
     <>
       <div
@@ -1484,17 +1237,16 @@ export default function node(props) {
               <span className="count_top">
                 <h2>
                   <strong className="farmname">
-                    <i className="fa fa-dot-circle-o" /> โหนด
+                    <i className="fa fa-dot-circle-o"></i> <label>โหนด</label>
                   </strong>
                 </h2>
               </span>
               <div>
                 <h2>
                   <span className="brief">
-                    {" "}
                     <i className="fa fa-rss"></i> รหัสโหนด
                   </span>{" "}
-                  <label className="nodeid">{nodeInfo.nodeID}</label>
+                  <label>{nodeInfo.nodeID}</label>
                 </h2>
               </div>
             </div>
@@ -1551,9 +1303,11 @@ export default function node(props) {
                     onChange={() =>
                       setreTime(document.getElementById("refreshTime").value)
                     }
+                    defaultValue={reTime}
                   >
-                    <option value="volvo">เลือกเวลาอัพเดตข้อมูล</option>
-                    <option value={5000}>ทุก 5 วินาที</option>
+                    <option value={-1} disabled>
+                      เลือกเวลาอัพเดตข้อมูล
+                    </option>
                     <option value={300000}>ทุก 5 นาที</option>
                     <option value={600000}>ทุก 10 นาที</option>
                     <option value={900000}>ทุก 15 นาที</option>
@@ -1567,299 +1321,12 @@ export default function node(props) {
           </div>
         </div>
       </div>
-      <div className="row">
-        <div className="x_panel">
-          <div className="x_title">
-            <h2>
-              <i className="fa fa-line-chart"></i> กราฟสถิติ{" "}
-            </h2>
-            <ul className="nav navbar-right panel_toolbox">
-              <li>
-                <a className="collapse-link" onClick={() => setgraph(!graph)}>
-                  <i
-                    className={
-                      graph ? "fa fa-chevron-up" : "fa fa-chevron-down"
-                    }
-                  ></i>
-                </a>
-              </li>
-            </ul>
-            <div className="clearfix"></div>
-          </div>
-          <div
-            className="x_content"
-            style={{
-              display: graph ? "flex" : "none",
-              justifyContent: "center",
-              flexDirection: "column",
-            }}
-          >
-            {graphDataList.map((graphdata, graphindex) => {
-              console.log(graphDataList);
-              return (
-                <div
-                  key={"graph" + graphindex}
-                  id={"graph" + graphindex}
-                  style={{
-                    border: "solid 0.5px",
-                    marginBottom: "10px",
-                    borderRadius: "10px",
-                    borderColor: "#BEBEBE",
-                    padding: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      fontSize: "16px",
-                    }}
-                  >
-                    {graphindex}เลือกโซน :{" "}
-                    <select
-                      id={"selectzone_graph" + graphindex}
-                      style={{
-                        color: "#73879C",
-                        height: "30px",
-                        marginLeft: "10px",
-                        borderColor: "#BEBEBE",
-                        borderRadius: "5px",
-                      }}
-                      onChange={() =>
-                        updategraphZone(
-                          graphindex,
-                          "selectzone_graph" + graphindex
-                        )
-                      }
-                    >
-                      <option value={-1}>เลือกโซน</option>
-                      {zoneIDlist.map((zone, index) => {
-                        return (
-                          <option key={"zone" + index} value={index}>
-                            โซนที่ {index + 1}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <div style={{ marginLeft: "10px" }}>ข้อมูล :</div>
-                    {dataList.map((_data, index) => {
-                      return (
-                        <select
-                          key={"data" + index}
-                          id={"dataSelect_graph" + graphindex}
-                          style={
-                            graphZone[graphindex]
-                              ? graphZone[graphindex].index == index
-                                ? {
-                                    color: "#73879C",
-                                    height: "30px",
-                                    marginLeft: "10px",
-                                    borderColor: "#BEBEBE",
-                                    borderRadius: "5px",
-                                  }
-                                : { display: "none" }
-                              : { display: "none" }
-                          }
-                          onChange={() =>
-                            getGraphDataConfig(
-                              document.getElementById(
-                                "selectzone_graph" + graphindex
-                              ).value,
-                              document.getElementById(
-                                "dataSelect_graph" + graphindex
-                              ).value,
-                              graphindex,
-                              document.getElementById("gmode" + graphindex)
-                                .value
-                            )
-                          }
-                        >
-                          <option value={-1}>เลือกข้อมูล</option>
-                          {_data.map((data, index) => {
-                            if (data[1] != null) {
-                              return (
-                                <option key={data[0]} value={data[0]}>
-                                  {getTHsensor(data[0]).name}
-                                </option>
-                              );
-                            }
-                          })}
-                        </select>
-                      );
-                    })}
-                    <select
-                      id={"gmode" + graphindex}
-                      style={{
-                        color: "#73879C",
-                        height: "30px",
-                        marginLeft: "10px",
-                        borderColor: "#BEBEBE",
-                        borderRadius: "5px",
-                        marginLeft: "auto",
-                      }}
-                      onChange={() =>
-                        updategraphMode(graphindex, "gmode" + graphindex)
-                      }
-                      disabled={false}
-                    >
-                      <option value={1} defaultValue={true}>
-                        เวลาย้อนหลัง
-                      </option>
-                      <option value={2}>ช่วงเวลา</option>
-                    </select>
-                    <select
-                      id={"gtime0" + graphindex}
-                      onChange={() =>
-                        getGraphDataConfig(
-                          document.getElementById(
-                            "selectzone_graph" + graphindex
-                          ).value,
-                          document.getElementById(
-                            "dataSelect_graph" + graphindex
-                          ).value,
-                          graphindex,
-                          document.getElementById("gmode" + graphindex).value
-                        )
-                      }
-                      style={
-                        graphMode[graphindex] == 1
-                          ? {
-                              color: "#73879C",
-                              height: "30px",
-                              marginLeft: "10px",
-                              borderColor: "#BEBEBE",
-                              borderRadius: "5px",
-                            }
-                          : { display: "none" }
-                      }
-                      disabled={false}
-                    >
-                      <option value={1}>1 ชั่วโมง</option>
-                      <option value={2}>2 ชั่วโมง</option>
-                      <option value={3}>3 ชั่วโมง</option>
-                      <option value={4}>4 ชั่วโมง</option>
-                      <option value={5}>5 ชั่วโมง</option>
-                    </select>
-                    <input
-                      id={"gtime1" + graphindex}
-                      type="datetime-local"
-                      onChange={() =>
-                        getGraphDataConfig(
-                          document.getElementById(
-                            "selectzone_graph" + graphindex
-                          ).value,
-                          document.getElementById(
-                            "dataSelect_graph" + graphindex
-                          ).value,
-                          graphindex,
-
-                          document.getElementById("gmode" + graphindex).value
-                        )
-                      }
-                      style={
-                        graphMode[graphindex] == 2
-                          ? {
-                              border: "solid 1px",
-                              color: "#73879C",
-                              height: "30px",
-                              marginLeft: "10px",
-                              borderColor: "#BEBEBE",
-                              borderRadius: "5px",
-                              outline: "none",
-                              minWidth: "50px",
-                            }
-                          : { display: "none" }
-                      }
-                      disabled={false}
-                    ></input>
-                    <input
-                      id={"gtime2" + graphindex}
-                      type="datetime-local"
-                      onChange={() =>
-                        getGraphDataConfig(
-                          document.getElementById(
-                            "selectzone_graph" + graphindex
-                          ).value,
-                          document.getElementById(
-                            "dataSelect_graph" + graphindex
-                          ).value,
-                          graphindex,
-
-                          document.getElementById("gmode" + graphindex).value
-                        )
-                      }
-                      style={
-                        graphMode[graphindex] == 2
-                          ? {
-                              border: "solid 1px",
-                              color: "#73879C",
-                              height: "30px",
-                              marginLeft: "10px",
-                              borderColor: "#BEBEBE",
-                              borderRadius: "5px",
-                              outline: "none",
-                              minWidth: "50px",
-                            }
-                          : { display: "none" }
-                      }
-                      disabled={false}
-                    ></input>
-                    <input
-                      id={"colorpicked" + graphindex}
-                      type="color"
-                      onChange={() =>
-                        changeGraphColor(
-                          graphindex,
-                          document.getElementById("colorpicked" + graphindex)
-                            .value
-                        )
-                      }
-                      style={{
-                        border: "solid 1px",
-                        color: "#73879C",
-                        height: "30px",
-                        marginLeft: "10px",
-                        borderColor: "#BEBEBE",
-                        borderRadius: "5px",
-                        outline: "none",
-                        minWidth: "50px",
-                      }}
-                    />
-                    <button
-                      className="btn btn-danger"
-                      style={{
-                        marginLeft: "10px",
-                        border: "none",
-                        backgroundColor: "white",
-                        outline: "none",
-                        color: "grey",
-                      }}
-                      onClick={() => deleteGraph(graphdata.id)}
-                    >
-                      x
-                    </button>
-                  </div>
-
-                  <Line
-                    key={graphDataList}
-                    data={graphdata}
-                    style={{ maxWidth: "100%", maxHeight: "350px" }}
-                  />
-                </div>
-              );
-            })}{" "}
-            <button
-              className="btn btn-primary"
-              style={{
-                borderRadius: "10px",
-              }}
-              onClick={() => addgraph(genid)}
-            >
-              เพิ่มกราฟข้อมูล
-            </button>
-          </div>
-        </div>
-      </div>
+      <GraphData
+        zoneIDlist={zoneIDlist}
+        dataList={dataList}
+        graphDataList={graphDataList}
+        setgarphDataList={setgarphDataList}
+      />
       <div id="zonebox" className="row">
         <div className="x_panel">
           {zoneList.map((zone, index) => {
@@ -1944,7 +1411,7 @@ export default function node(props) {
                                       className="brief"
                                       style={{
                                         fontWeight: "bold",
-                                        color: "#AAB6AA",
+                                        color: "#0069D9",
                                         marginRight: "5px",
                                         fontSize: "24px",
                                       }}
@@ -2863,7 +2330,10 @@ export default function node(props) {
                                 />
                                 <label
                                   className={styles.switch2}
-                                  style={{ marginLeft: "auto" }}
+                                  style={{
+                                    marginLeft: "auto",
+                                    minWidth: "32px",
+                                  }}
                                 >
                                   <input
                                     key={relay.time3.status}
@@ -3139,14 +2609,14 @@ export default function node(props) {
                           >
                             <label>
                               <i className="fa fa-clock-o"></i> ตั้งค่าเวลา :
-                              <h
+                              <label
                                 className={
                                   relay.timeFunction ? styles.online : ""
                                 }
                                 style={{ marginLeft: "5px" }}
                               >
                                 {relay.timeFunction ? "เปิด" : "ปิด"}
-                              </h>
+                              </label>
                             </label>
                             <ul
                               className="nav navbar-right panel_toolbox"
@@ -3186,7 +2656,8 @@ export default function node(props) {
                                     onClick={() =>
                                       settimeFunction(
                                         "tStatus" + relayIndex,
-                                        relay.relayID
+                                        relay.relayID,
+                                        relayIndex
                                       )
                                     }
                                     style={{
@@ -3213,7 +2684,7 @@ export default function node(props) {
                               {relay.time1.status ? "เปิด" : "ปิด"}
                             </label>
                           </h2>
-                          <h2 className={relay.timeFunction ? "brief" : ""}>
+                          <h2 className={relay.time1.status ? "brief" : ""}>
                             เปิด : <i className="fa fa-clock-o"></i>{" "}
                             {relay.time1.time_on} | ปิด:{" "}
                             <i className="fa fa-clock-o"></i>{" "}
@@ -3311,7 +2782,7 @@ export default function node(props) {
                               {relay.time2.status == 1 ? "เปิด" : "ปิด"}
                             </label>
                           </h2>
-                          <h2 className={relay.timeFunction ? "brief" : ""}>
+                          <h2 className={relay.time2.status ? "brief" : ""}>
                             เปิด : <i className="fa fa-clock-o"></i>{" "}
                             {relay.time2.time_on} | ปิด:{" "}
                             <i className="fa fa-clock-o"></i>{" "}
