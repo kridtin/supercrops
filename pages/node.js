@@ -78,7 +78,7 @@ export default function node(props) {
   if (farmName == undefined) {
     return <div>error</div>;
   }*/
-  const [reTime, setreTime] = useState(1800000);
+  const [reTime, setreTime] = useState(300000);
   const [nodeInfo, setnodeInfo] = useState({});
   const [zoneIDlist, setzoneIDlist] = useState([]);
   const [relayIDlist, setrelayIDlist] = useState([]);
@@ -251,7 +251,7 @@ export default function node(props) {
         console.log(error.response.headers);
       });
     const nodeInfores = nodeInfo.data;
-    setRefresshTime(nodeInfores.refreshTime);
+    getRefreshTime(nodeInfores.refreshTime);
 
     setnodeInfo(nodeInfores);
     setzoneIDlist(nodeInfores.zoneIDlist);
@@ -551,20 +551,32 @@ export default function node(props) {
       }
     }
   }
-  function setRefresshTime(time) {
+  function getRefreshTime(time) {
     if (time == "5m") {
       setreTime(300000);
+      console.log("set refresh time to => 300000");
+      document.getElementById("refreshTime").value = 300000;
     } else if (time == "10m") {
       setreTime(600000);
+      console.log("set refresh time to => 600000");
+      document.getElementById("refreshTime").value = 600000;
     } else if (time == "15m") {
       setreTime(900000);
+      console.log("set refresh time to => 900000");
+      document.getElementById("refreshTime").value = 900000;
     } else if (time == "20m") {
       setreTime(1200000);
+      console.log("set refresh time to => 1200000");
+      document.getElementById("refreshTime").value = 1200000;
     } else if (time == "25m") {
       setreTime(1500000);
+      console.log("set refresh time to => 1500000");
+      document.getElementById("refreshTime").value = 1500000;
     } else if (time == "30m") {
       setreTime(1800000);
-    }
+      console.log("set refresh time to => 1800000");
+      document.getElementById("refreshTime").value = 1800000;
+    } /* API put retime to database */
   }
   function putTimeSetting(relayIndex, relayID) {
     const _orgId = localStorage.getItem("_orgID");
@@ -644,128 +656,184 @@ export default function node(props) {
     modalOff("modalstyleTime" + relayIndex);
   }
 
-  function timematch(relayid, timeindex, timeon, timeoff, date) {
+  function timematch(relayid, timeindex, timeon, timeoff, date, status) {
+    //console.log("timematch is on work");
     for (let i = 0; i < relayList.length; i++) {
       const relay = relayList[i];
       if (relayid == relay.relayID) {
+        // console.log("relayid == relay.relayID");
         if (timeindex == 1) {
-          var relay_time1 = relay.time2;
-          for (let i = 0; i < relay_time1.date.length; i++) {
-            const _date = relay_time1.date[i];
-            const _timeon = relay_time1.time_on;
-            const _timeoff = relay_time1.time_off;
-            if (_date[i] == 1 && _date[i] == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
+          // console.log("timeindex == 1");
+          if (status == "false") {
+            return "true";
+          } else {
+            //console.log("status != false");
+            var relay_time1 = relay.time2;
+            var relay_time2 = relay.time3;
+            //console.log("relay time1 status => " + relay_time1.status);
+            if (relay_time1.status == false && relay_time2.status == false) {
+              //console.log("return true");
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time1.date.length; i++) {
+                const _date = relay_time1.date[i];
+                const _timeon = relay_time1.time_on;
+                const _timeoff = relay_time1.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
               }
             }
-          }
-          var relay_time2 = relay.time3;
-          for (let i = 0; i < relay_time2.date.length; i++) {
-            const _date = relay_time2.date[i];
-            const _timeon = relay_time2.time_on;
-            const _timeoff = relay_time2.time_off;
-            if (_date[i] == 1 && _date == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
+            //console.log("relay time1 status => " + relay_time1.status);
+            if (relay_time2.status == false && relay_time2.status == false) {
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time2.date.length; i++) {
+                const _date = relay_time2.date[i];
+                const _timeon = relay_time2.time_on;
+                const _timeoff = relay_time2.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
               }
             }
           }
         } else if (timeindex == 2) {
-          var relay_time1 = relay.time1;
-          for (let i = 0; i < relay_time1.date.length; i++) {
-            const _date = relay_time1.date[i];
-            const _timeon = relay_time1.time_on;
-            const _timeoff = relay_time1.time_off;
-            if (_date[i] == 1 && _date == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
+          //console.log("timeindex == 2");
+          if (status == "false") {
+            //console.log("status == false");
+            return true;
+          } else {
+            var relay_time1 = relay.time1;
+            var relay_time2 = relay.time3;
+
+            if (relay_time1.status == false && relay_time2.status == false) {
+              //console.log("chacktime1 = false");
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time1.date.length; i++) {
+                const _date = relay_time1.date[i];
+                const _timeon = relay_time1.time_on;
+                const _timeoff = relay_time1.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
               }
             }
-          }
-          var relay_time2 = relay.time3;
-          for (let i = 0; i < relay_time2.date.length; i++) {
-            const _date = relay_time2.date[i];
-            const _timeon = relay_time2.time_on;
-            const _timeoff = relay_time2.time_off;
-            if (_date[i] == 1 && _date == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
+            if (relay_time2.status == false && relay_time2.status == false) {
+              //console.log("chacktime2 = false");
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time2.date.length; i++) {
+                const _date = relay_time2.date[i];
+                const _timeon = relay_time2.time_on;
+                const _timeoff = relay_time2.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
               }
             }
           }
         } else if (timeindex == 3) {
-          var relay_time1 = relay.time2;
-          for (let i = 0; i < relay_time1.date.length; i++) {
-            const _date = relay_time1.date[i];
-            const _timeon = relay_time1.time_on;
-            const _timeoff = relay_time1.time_off;
-            if (_date[i] == 1 && _date == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
+          //console.log("timeindex == 3");
+          if (status == "false") {
+            //console.log("status == false");
+            return "true";
+          } else {
+            var relay_time1 = relay.time2;
+            var relay_time2 = relay.time1;
+            if (relay_time1.status == false && relay_time2.status == false) {
+              //console.log("chacktime1 = false");
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time1.date.length; i++) {
+                const _date = relay_time1.date[i];
+                const _timeon = relay_time1.time_on;
+                const _timeoff = relay_time1.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
+              }
+            }
+            if (relay_time2.status == false && relay_time2.status == false) {
+              // console.log("chacktime2 = false");
+              return "true";
+            } else {
+              for (let i = 0; i < relay_time2.date.length; i++) {
+                const _date = relay_time2.date[i];
+                const _timeon = relay_time2.time_on;
+                const _timeoff = relay_time2.time_off;
+                if (_date == date[i] && date[i] == 1) {
+                  if (timeon > _timeon && timeon < _timeoff) {
+                    return "false";
+                  } else if (timeon < _timeon && timeoff > _timeon) {
+                    return "false";
+                  } else if (timeon == _timeon && timeoff == timeoff) {
+                    return "false";
+                  } else {
+                    return "true";
+                  }
+                }
               }
             }
           }
-          var relay_time2 = relay.time1;
-          for (let i = 0; i < relay_time2.date.length; i++) {
-            const _date = relay_time2.date[i];
-            const _timeon = relay_time2.time_on;
-            const _timeoff = relay_time2.time_off;
-            if (_date[i] == 1 && _date == date[i]) {
-              if (timeon > _timeon && timeon < _timeoff) {
-                return "false";
-              } else if (timeon < _timeon && timeoff > _timeon) {
-                return "false";
-              } else if (timeon == _timeon && timeoff == timeoff) {
-                return "false";
-              } else {
-                return "true";
-              }
-            }
-          }
+        } else {
+          console.log("no timeindex");
         }
+      } else {
+        console.log("relayid !== relay.relayID");
       }
     }
   }
 
-  async function putminitime(relayIndex, relayID, timeIndex) {
+  async function putminitime(relayIndex, relayID, timeIndex, statusID) {
     const _farmID = localStorage.getItem("_farmID");
     const _orgId = localStorage.getItem("_orgID");
     const time = [];
     const timecheck = document.getElementById(
       "t" + timeIndex + "Status" + relayIndex
     ).checked;
-
+    // console.log("time status => " + timecheck.toString());
     if (timecheck) {
       var _status = "true";
     } else {
@@ -793,14 +861,16 @@ export default function node(props) {
         }
       }
       if (timeIndex == 1) {
-        const ismatch = await timematch(
+        //console.log("call timemacth()");
+        const checktime = timematch(
           relayID,
           timeIndex,
           timeon,
           timeoff,
-          time
+          time,
+          _status
         );
-        if (ismatch == "false") {
+        if (checktime == "false") {
           setfail(true);
           setfailTxt("ช่วงเวลาทับซ้อนกัน");
         } else {
@@ -833,14 +903,15 @@ export default function node(props) {
           );
         }
       } else if (timeIndex == 2) {
-        const ismatch = await timematch(
+        const checktime = timematch(
           relayID,
           timeIndex,
           timeon,
           timeoff,
-          time
+          time,
+          _status
         );
-        if (ismatch == "false") {
+        if (checktime == "false") {
           setfail(true);
           setfailTxt("ช่วงเวลาทับซ้อนกัน");
         } else {
@@ -874,14 +945,15 @@ export default function node(props) {
           );
         }
       } else if (timeIndex == 3) {
-        const ismatch = await timematch(
+        const checktime = timematch(
           relayID,
           timeIndex,
           timeon,
           timeoff,
-          time
+          time,
+          _status
         );
-        if (ismatch == "false") {
+        if (checktime == "false") {
           setfail(true);
           setfailTxt("ช่วงเวลาทับซ้อนกัน");
         } else {
@@ -951,6 +1023,37 @@ export default function node(props) {
         }
       }
     );
+    const _relayList = relayList;
+    let _relay = {};
+    for (let i = 0; i < _relayList.length; i++) {
+      const temp_relay = _relayList[i];
+      if (temp_relay.relayID == relayID) {
+        _relay = _relayList[i];
+      }
+    }
+    const predata = {
+      data1: {
+        status: "false",
+        data: _relay.data1.data,
+        max: _relay.data1.max,
+        min: _relay.data1.min,
+        zoneId: _relay.data1.zoneId,
+        compare: _relay.data1.compare,
+      },
+    };
+    client.publish(
+      `/set_data1/${_farmID}/${relayID}`,
+      JSON.stringify(predata),
+      function (err) {
+        if (!err) {
+          console.log("!!****=Publiching Data=****!!");
+          console.log(_putdata);
+          console.log("=============================");
+        } else {
+          console.log(err);
+        }
+      }
+    );
     client.publish(
       `/time_fn/${_farmID}/${relayID}`,
       JSON.stringify(_timeFn),
@@ -959,7 +1062,6 @@ export default function node(props) {
           console.log("!!****and****!!");
           console.log(_timeFn);
           console.log("=============================");
-          setwait(true);
         } else {
           console.log(err);
         }
@@ -1004,8 +1106,8 @@ export default function node(props) {
           _relay = _relayList[i];
         }
       }
-      console.log("temp_relay");
-      console.log(_relay);
+      //console.log("temp_relay");
+      //console.log(_relay);
 
       const time1 = {
         time1: {
@@ -1015,7 +1117,7 @@ export default function node(props) {
           date: _relay.time1.date,
         },
       };
-
+      /*
       client.publish(
         `/set_time1/${_farmID}/${relayID}`,
         JSON.stringify(time1),
@@ -1029,7 +1131,7 @@ export default function node(props) {
             console.log(err);
           }
         }
-      );
+      );*/
 
       const time2 = {
         time2: {
@@ -1038,7 +1140,7 @@ export default function node(props) {
           time_off: _relay.time2.time_off,
           date: _relay.time2.date,
         },
-      };
+      }; /*
       client.publish(
         `/set_time2/${_farmID}/${relayID}`,
         JSON.stringify(time2),
@@ -1052,7 +1154,7 @@ export default function node(props) {
             console.log(err);
           }
         }
-      );
+      );*/
       const time3 = {
         time3: {
           status: "false",
@@ -1060,7 +1162,7 @@ export default function node(props) {
           time_off: _relay.time3.time_off,
           date: _relay.time3.date,
         },
-      };
+      }; /*
       client.publish(
         `/set_time3/${_farmID}/${relayID}`,
         JSON.stringify(time3),
@@ -1074,7 +1176,7 @@ export default function node(props) {
             console.log(err);
           }
         }
-      );
+      );*/
     }
     client.publish(
       `/time_fn/${_farmID}/${relayID}`,
@@ -1107,7 +1209,6 @@ export default function node(props) {
       }
     );
   }
-  useEffect(() => {}, []);
   function changeStatus(id, relayID) {
     const _orgId = localStorage.getItem("_orgID");
     const _farmID = localStorage.getItem("_farmID");
@@ -1305,9 +1406,9 @@ export default function node(props) {
                     }
                     defaultValue={reTime}
                   >
-                    <option value={-1} disabled>
-                      เลือกเวลาอัพเดตข้อมูล
-                    </option>
+                    <option value={-1}>เวลาอัพเดตข้อมูล</option>
+                    <option value={5000}>ทุก 5 วินาที</option>
+                    <option value={60000}>ทุก 1 นาที</option>
                     <option value={300000}>ทุก 5 นาที</option>
                     <option value={600000}>ทุก 10 นาที</option>
                     <option value={900000}>ทุก 15 นาที</option>
@@ -2046,7 +2147,8 @@ export default function node(props) {
                                           putminitime(
                                             relayIndex,
                                             relay.relayID,
-                                            1
+                                            1,
+                                            "t1Status" + relayIndex
                                           )
                                       : () => {}
                                   }
@@ -2096,7 +2198,7 @@ export default function node(props) {
                                     id={"t2Status" + relayIndex}
                                     type="checkbox"
                                     defaultChecked={
-                                      relay.time1.status ? true : false
+                                      relay.time2.status ? true : false
                                     }
                                     disabled={relay.timeFunction ? false : true}
                                   />
@@ -2287,7 +2389,8 @@ export default function node(props) {
                                           putminitime(
                                             relayIndex,
                                             relay.relayID,
-                                            2
+                                            2,
+                                            "t2Status" + relayIndex
                                           )
                                       : () => {}
                                   }
@@ -2341,7 +2444,7 @@ export default function node(props) {
                                     type="checkbox"
                                     defaultChecked={
                                       relay.timeFunction
-                                        ? relay.time1.status
+                                        ? relay.time3.status
                                           ? true
                                           : false
                                         : false
@@ -2534,7 +2637,8 @@ export default function node(props) {
                                           putminitime(
                                             relayIndex,
                                             relay.relayID,
-                                            3
+                                            3,
+                                            "t3Status" + relayIndex
                                           )
                                       : () => {}
                                   }
@@ -3046,7 +3150,11 @@ export default function node(props) {
                             </h2>
                             <h2
                               className={
-                                relay.data1.status ? styles.online : ""
+                                relay.dataFunction
+                                  ? relay.data1.status
+                                    ? styles.online
+                                    : ""
+                                  : ""
                               }
                             >
                               <i className="fa fa-sun-o"></i> {relay.data1.data}{" "}

@@ -6,9 +6,22 @@ import axios from "axios";
 
 export default function login(props) {
   async function login() {
-    var email = document.getElementById("login_email").value;
-    var pass = document.getElementById("login_pass").value;
-
+    var username = document.getElementById("login_email").value;
+    var password = document.getElementById("login_pass").value; /*
+    await axios
+    .post(
+      "http://80d9-2001-fb1-61-6ff2-3deb-b5ca-acd3-3713.ngrok.io/api/auth/signin",
+      { username: "test1", password: "012345678" }
+    )
+    .catch((error) => {
+      console.log(error);
+    })
+    .then((res) => {
+      localStorage.setItem("logininfo", JSON.stringify(res.data));
+      props.setorgID("Oc780373b0fa34391a5f987cc095f680a");
+      props.setLogin(true);
+      router.push("/");
+    });*/
     props.setorgID("Oc780373b0fa34391a5f987cc095f680a");
     props.setLogin(true);
     router.push("/");
@@ -19,7 +32,7 @@ export default function login(props) {
     console.log(email + pass);
     const loginres = await axios
       .post(
-        "http://2c3e-2001-fb1-61-6ff2-3deb-b5ca-acd3-3713.ngrok.io/api/auth/signin",
+        "http://80d9-2001-fb1-61-6ff2-3deb-b5ca-acd3-3713.ngrok.io/api/auth/signin",
         { username: "test1", password: "012345678" }
       )
       .catch((error) => {

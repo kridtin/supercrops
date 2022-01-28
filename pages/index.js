@@ -26,7 +26,14 @@ export default function Home(props) {
       localStorage.getItem("_orgID") == ""
     ) {
       window.location.assign("/login");
-    }
+    } /*
+    const profileres = await axios.post(
+      "http://80d9-2001-fb1-61-6ff2-3deb-b5ca-acd3-3713.ngrok.io/api/user/getprofile",
+      { _id: logininfo.id },
+      { headers: { "x-access-token": logininfo.accessToken } }
+    )
+    const userInfo = profileres.data;
+    localStorage.setItem("userInfo", userInfo);*/
     // test orgid = O21f42baf3ce842c292092197e17002cb
     const responce = await axios
       .post(

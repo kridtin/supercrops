@@ -196,6 +196,12 @@ export default function GraphData(props) {
           backgroundColor: "rgb(255, 99, 132)",
         },
       ],
+      options: {
+        zone: "",
+        mode: "",
+        time: "",
+        data: "",
+      },
     };
     let tempState = graphDataList;
     props.setgarphDataList((graphDataList) => [...graphDataList, newGraph]);
@@ -294,10 +300,12 @@ export default function GraphData(props) {
       let _garphData = {
         labels: [],
         datasets: [],
+        options: { zone: "", mode: "", time, data: "" },
       };
       let adata = {
         label: "",
         data: [],
+        id: "",
         backgroundColor: colorHex,
         borderColor: colorHex,
       };
@@ -307,8 +315,7 @@ export default function GraphData(props) {
         const data = _datapoint.data[i];
         const atime = new Date(data._time);
         const btime = new Date(data._time).getTime();
-        console.log("testtime");
-        console.log(btime);
+
         const keys = Object.keys(data);
         for (let i = 0; i < keys.length; i++) {
           const akey = keys[i];
@@ -322,6 +329,10 @@ export default function GraphData(props) {
       let temp_state = graphDataList;
       _garphData.id = temp_state[index].id;
       _garphData.datasets.push(adata);
+      _garphData.options.zone = parseInt(zoneindex);
+      _garphData.options.mode = parseInt(mode);
+      _garphData.options.time = time;
+      _garphData.options.data = data;
       console.log(_garphData);
       temp_state[index] = _garphData;
       props.setgarphDataList((graphDataList) => [...temp_state]);
@@ -331,6 +342,7 @@ export default function GraphData(props) {
         document.getElementById("gtime1" + index).value,
         document.getElementById("gtime2" + index).value,
       ];
+      console.log(time);
       if (time[0] == "" || time[1] == "") {
         return "";
       } else {
@@ -370,7 +382,8 @@ export default function GraphData(props) {
         let _garphData = {
           labels: [],
           datasets: [],
-          id: "123",
+          id: "",
+          options: { zone: "", mode: "", time, data: "" },
         };
         let adata = {
           label: "",
@@ -396,6 +409,10 @@ export default function GraphData(props) {
         let temp_state = graphDataList;
         _garphData.id = temp_state[index].id;
         _garphData.datasets.push(adata);
+        _garphData.options.zone = parseInt(zoneindex);
+        _garphData.options.mode = parseInt(mode);
+        _garphData.options.time = time;
+        _garphData.options.data = data;
         console.log(_garphData);
         temp_state[index] = _garphData;
         props.setgarphDataList((graphDataList) => [...temp_state]);
@@ -473,11 +490,18 @@ export default function GraphData(props) {
                           "selectzone_graph" + graphindex
                         )
                       }
+                      defaultValue={graphdata.options.zone}
                     >
                       <option value={-1}>เลือกโซน</option>
                       {zoneIDlist.map((zone, index) => {
                         return (
-                          <option key={"zone" + index} value={index}>
+                          <option
+                            key={"zone" + index}
+                            value={index}
+                            selected={
+                              graphdata.options.zone == index ? true : false
+                            }
+                          >
                             โซนที่ {index + 1}
                           </option>
                         );
@@ -716,13 +740,16 @@ export default function GraphData(props) {
                         grid: { display: false },
                         type: "time",
                         time: {
-                          unit: "hour",
+                          unit: "minute",
+                          displayFormats: {
+                            quarter: "DD MMM YYYY",
+                          },
                         },
                         ticks: {
                           source: "auto",
                           maxRotation: 0,
                           autoSkip: true,
-                          count: 5,
+                          maxTicksLimit: 6,
                         },
                       },
                     },
